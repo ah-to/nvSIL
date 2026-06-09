@@ -24,7 +24,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        promptForNotesDirectory()
+        if let bookmark = Preferences.shared.notesDirectoryBookmark,
+           let url = restoreDirectoryFromBookmark(bookmark) {
+            loadNotesDirectory(url)
+        } else {
+            promptForNotesDirectory()
+        }
     }
 
     @objc private func preferencesDidChange() {
@@ -114,6 +119,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
 
+            self?.saveDirectoryBookmark(url)
             self?.loadNotesDirectory(url)
         }
     }
