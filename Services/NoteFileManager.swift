@@ -65,24 +65,30 @@ class NoteFileManager {
     }
 
     func createNoteFile(in directory: URL, title: String, content: String) throws -> Note {
-        let filename = sanitizeFilename(title) + ".rtf"
+        let useRTF = Preferences.shared.storeNotesAsRTF
+        let ext = useRTF ? "rtf" : "txt"
+        let filename = sanitizeFilename(title) + "." + ext
         var fileURL = directory.appendingPathComponent(filename)
 
         var counter = 1
         while fileManager.fileExists(atPath: fileURL.path) {
             if counter > 1000 { throw NoteError.tooManyDuplicates }
             let timestamp = DateFormatter.filenameSafe.string(from: Date())
-            let uniqueFilename = "\(sanitizeFilename(title))-\(timestamp).rtf"
+            let uniqueFilename = "\(sanitizeFilename(title))-\(timestamp).\(ext)"
             fileURL = directory.appendingPathComponent(uniqueFilename)
             counter += 1
         }
 
-        let attributedString = NSAttributedString(string: content)
-        if let rtfData = try? attributedString.data(
-            from: NSRange(location: 0, length: attributedString.length),
-            documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
-        ) {
-            try rtfData.write(to: fileURL, options: .atomic)
+        if useRTF {
+            let attributedString = NSAttributedString(string: content)
+            if let rtfData = try? attributedString.data(
+                from: NSRange(location: 0, length: attributedString.length),
+                documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
+            ) {
+                try rtfData.write(to: fileURL, options: .atomic)
+            } else {
+                try content.write(to: fileURL, atomically: true, encoding: .utf8)
+            }
         } else {
             try content.write(to: fileURL, atomically: true, encoding: .utf8)
         }
@@ -174,7 +180,7 @@ class NoteFileManager {
                 options: [.skipsHiddenFiles]
             )
 
-            let supportedExtensions = ["rtf"]
+            let supportedExtensions = ["rtf", "txt", "md"]
             let noteFiles = fileURLs.filter { supportedExtensions.contains($0.pathExtension.lowercased()) }
 
             var notes: [Note] = []

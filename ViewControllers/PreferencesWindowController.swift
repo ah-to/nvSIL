@@ -188,7 +188,9 @@ class PreferencesWindowController: NSWindowController {
 
         let formatPopup = NSPopUpButton(frame: NSRect(x: 140, y: 78, width: 180, height: 26), pullsDown: false)
         formatPopup.addItems(withTitles: ["Rich Text (.rtf)", "Plain Text (.txt)"])
-        formatPopup.selectItem(at: 0)
+        formatPopup.selectItem(at: Preferences.shared.storeNotesAsRTF ? 0 : 1)
+        formatPopup.target = self
+        formatPopup.action = #selector(noteFormatChanged(_:))
         storageContent.addSubview(formatPopup)
 
         let infoLabel = createLabel("Notes are stored as individual files in your selected\nfolder. You can access them with any text editor.", at: NSPoint(x: 10, y: 25), alignment: .left, width: 360)
@@ -507,6 +509,10 @@ class PreferencesWindowController: NSWindowController {
         }
     }
 
+
+    @objc private func noteFormatChanged(_ sender: NSPopUpButton) {
+        Preferences.shared.storeNotesAsRTF = sender.indexOfSelectedItem == 0
+    }
 
     @objc private func styledTextChanged(_ sender: NSButton) {
         Preferences.shared.copyBasicStylesFromOtherApps = sender.state == .on
